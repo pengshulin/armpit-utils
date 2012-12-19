@@ -26,6 +26,7 @@ USAGE = '''
 import sys, os, time, serial, optparse, threading, Queue
 import readline
 
+
 DEFAULT_BAUD = 9600
 DEFAULT_TIMEOUT = 1
 PROMPT = 'ap> '
@@ -37,17 +38,23 @@ TIMEOUT_WRITE_FILE = 1
 TIMEOUT_PROMPT_SYNC = 1
 BYTES_PER_WRITE = 64 
 
+PRE_DEFINED_FUNCTION = '''\
+(define (port-write-int int) (write-char (integer->char int) port))
+(define (program lst) (for-each port-write-int lst))
+''' 
+
 class ArmpitException( Exception ):
     pass
-    
 
 class Armpit():
     def __init__(self, device ):
         try:
-            self.port = serial.serial_for_url( device, DEFAULT_BAUD, timeout=DEFAULT_TIMEOUT)
+            self.port = serial.serial_for_url( device, \
+                                      DEFAULT_BAUD, timeout=DEFAULT_TIMEOUT)
         except AttributeError:
             # for older version of pyserial
-            self.port = serial.Serial(device, DEFAULT_BAUD, timeout=DEFAULT_TIMEOUT)
+            self.port = serial.Serial(device, \
+                                      DEFAULT_BAUD, timeout=DEFAULT_TIMEOUT)
         self.cmdBuff = ''
         self.rxBuff = ''
         self.queueResponse = Queue.Queue()
@@ -57,7 +64,7 @@ class Armpit():
         self.thread.start()
 
     def threadRxListening(self):
-        '''the thread listens on RXD'''
+        # the thread listens on RXD
         self.port.flushInput()
         self.rxBuff = ''
         while True:
@@ -112,15 +119,18 @@ class Armpit():
  
     def checkPrompt(self):
         # wait for prompt
+        ret = False
         try:
             while True:
                 line = self.queueResponse.get( timeout=TIMEOUT_PROMPT_SYNC )
                 if line == PROMPT:
                     # if queue is not empty, this may be the previous prompt
                     if self.queueResponse.empty():
-                        return True
+                        ret = True
+                        break
         except Queue.Empty:
-            return False
+            pass
+        return ret
 
     def syncPrompt( self ):
         # send ETX(0x03) to stop curret line
@@ -178,10 +188,10 @@ class Armpit():
 
     def preProgram( self ):
         # some thing done before mass program
-        self.evalLine( '(define (port-write-int int) (write-char (integer->char int) port))', show=True )
-        self.checkPrompt()
-        self.evalLine( '(define (program lst) (for-each port-write-int lst))', show=True )
-        self.checkPrompt()
+        for line in PRE_DEFINED_FUNCTION:
+            if line:
+                self.evalLine( line.strip(), show=True )
+                self.checkPrompt()
 
     def programFlash( self, filename ):
         # program files
@@ -261,6 +271,7 @@ def main():
             if os.path.isfile( filename ):
                 ARMPIT.evalFile( filename )
     else:
+        readline.clear_history()
         # interactive mode
         ARMPIT.enterRepl()
 
