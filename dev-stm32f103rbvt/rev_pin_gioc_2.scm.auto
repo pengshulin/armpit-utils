@@ -1,3 +1,0 @@
-(load "rev_pin.scm")
-(rev-pin gioc 2 1000 200 0)
-
