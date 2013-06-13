@@ -26,9 +26,9 @@ USAGE = '''
 import sys, os, time, serial, optparse, threading, Queue
 import readline
 
-
+DEFAULT_DEVICE = '/dev/ttyS0'
 DEFAULT_BAUD = 9600
-DEFAULT_TIMEOUT = 1
+DEFAULT_TIMEOUT = 1 
 PROMPT = 'ap> '
 
 TIMEOUT = 1
@@ -176,7 +176,7 @@ class Armpit():
 
     def unlockFlash( self ):
         # unlockFlash flash
-        self.evalLine( '(unlockFlash)', show=True )
+        self.evalLine( '(unlock)', show=True )
         assert self.queueResponse.get( timeout=TIMEOUT ) == '#t'
         self.checkPrompt()
 
@@ -188,7 +188,7 @@ class Armpit():
 
     def preProgram( self ):
         # some thing done before mass program
-        for line in PRE_DEFINED_FUNCTION:
+        for line in PRE_DEFINED_FUNCTION.splitlines():
             if line:
                 self.evalLine( line.strip(), show=True )
                 self.checkPrompt()
@@ -224,7 +224,7 @@ def main():
         action = "store",
         type = "string",
         help = "serial port device",
-        default = '/dev/ttyS0',
+        default = DEFAULT_DEVICE,
     )
  
     PARSER.add_option("-e",

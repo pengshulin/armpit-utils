@@ -1,1 +1,1 @@
-rev_pin_gioc_2.scm.auto
+manual_reset_gioc_2.scm.auto
